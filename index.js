@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const app = express()
 const cors = require('cors');
@@ -37,6 +37,7 @@ async function run() {
     const categoryCollection = client.db("medDB").collection('category');
     const categoryNameCollection = client.db("medDB").collection('categoryName');
     const usersCollection = client.db("medDB").collection('users');
+    const cartCollection = client.db("medDB").collection('cart');
 
     // jwt relrated api
     app.post('/jwt',async(req,res)=>{
@@ -60,7 +61,19 @@ async function run() {
       })
     }
 
-    // all medicine
+    // get all medicine data 
+    app.get('/medicines',async(req,res)=>{
+      const result = await categoryCollection.find().toArray()
+      res.send(result)
+    })
+    // get a singel medicine data by id
+    app.get('/medicine/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await categoryCollection.findOne(query)
+      res.send(result);
+    })
+    // all medicine filter by category name
     app.get('/category', async(req,res)=>{
         const category = req.query.category;
         const result = await categoryCollection.find({category}).toArray();
@@ -72,6 +85,64 @@ async function run() {
         const result = await categoryNameCollection.find().toArray();
         res.send(result)
     })
+    // add medicine to the cart
+    app.post('/cart', async(req,res)=>{
+      const medicineData = req.body;
+      const result = await cartCollection.insertOne(medicineData);
+      res.send(result)
+    })
+    // get card data add by user filter by user email
+    app.get('/userCart/:email', async (req,res)=>{
+      const email = req.params.email;
+      const query = {user_email: email};
+      const result = await cartCollection.find(query).toArray();
+      res.send(result)
+    })
+    // delete user all cart data by email
+    app.delete('/deleteAllCart/:email', async(req,res)=>{
+      const email = req.params.email;
+      const query = {user_email: email};
+      const result = await cartCollection.deleteMany(query)
+      res.send(result)
+    })
+    // delete single item from cart by id
+    app.delete('/deleteOneCart/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await cartCollection.deleteOne(query)
+      res.send(result)
+    })
+    // increase count by +1
+    app.put('/cart/increment/:id', async (req, res) => {
+      try {
+        const result = await cartCollection.findOneAndUpdate(
+          { _id: new ObjectId(req.params.id) },
+          { $inc: { count: 1 } },
+          { returnOriginal: false }
+        );
+        res.json(result.value);
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    });
+     // Decrement item count
+  app.put('/cart/decrement/:id', async (req, res) => {
+    try {
+      const item = await cartCollection.findOne({ _id: new ObjectId(req.params.id) });
+      if (item.count > 1) {
+        const result = await cartCollection.findOneAndUpdate(
+          { _id: new ObjectId(req.params.id) },
+          { $inc: { count: -1 } },
+          { returnOriginal: false }
+        );
+        res.json(result.value);
+      } else {
+        res.status(400).json({ message: 'Count cannot be less than 1' });
+      }
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  });
       // users releted api
       app.post('/users',async(req,res)=>{
         const user = req.body;
