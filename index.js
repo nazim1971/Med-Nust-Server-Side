@@ -174,22 +174,29 @@ async function run() {
         const result = await usersCollection.find().toArray();
         res.send(result);
       });
-      // CHECK THE USER IS A ADMIN OR NOT
-      app.get('/users/admin/:email', verifyToken, async (req, res) => {
-        const email = req.params.email;
+
+          // get a user info by email from db
+    app.get('/user/:email',verifyToken, async(req, res) => {
+      const email = req.params.email
+      const result = await usersCollection.findOne({ email })
+      res.send(result)
+    })
+      // // CHECK THE USER IS A ADMIN OR NOT
+      // app.get('/users/admin/:email', verifyToken, async (req, res) => {
+      //   const email = req.params.email;
   
-        if (email !== req.decoded.email) {
-          return res.status(403).send({ message: 'forbidden access' })
-        }
+      //   if (email !== req.decoded.email) {
+      //     return res.status(403).send({ message: 'forbidden access' })
+      //   }
   
-        const query = { email: email };
-        const user = await usersCollection.findOne(query);
-        let admin = false;
-        if (user) {
-          admin = user?.role === 'admin';
-        }
-        res.send({ admin });
-      })
+      //   const query = { email: email };
+      //   const user = await usersCollection.findOne(query);
+      //   let admin = false;
+      //   if (user) {
+      //     admin = user?.role === 'admin';
+      //   }
+      //   res.send({ admin });
+      // })
       
       // payments releted api
       // payment intent
