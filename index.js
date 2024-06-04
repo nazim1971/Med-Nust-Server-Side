@@ -113,6 +113,30 @@ async function run() {
         const result = await categoryNameCollection.find().toArray();
         res.send(result)
     })
+    // add a new category
+  app.post('/addCategory', async(req,res)=>{
+    const category = req.body;
+    const result = await categoryNameCollection.insertOne(category);
+    res.send(result)
+  })
+  // update a category 
+  app.patch('/category/:id', async (req, res) => {
+    const item = req.body;
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) }
+    const updatedDoc = {
+      $set: {...item}
+    }
+    const result = await categoryNameCollection.updateOne(filter, updatedDoc)
+    res.send(result);
+  })
+  // delete a category by id
+  app.delete('/category/:id',async(req,res)=>{
+    const id= req.params.id;
+    const query = {_id: new ObjectId(id)};
+    const result = await categoryNameCollection.deleteOne(query);
+    res.send(result);
+  })
     // add medicine to the cart
     app.post('/cart', async(req,res)=>{
       const medicineData = req.body;
@@ -131,15 +155,21 @@ async function run() {
       const result = await cartCollection.find(query).toArray();
       res.send(result)
     })
+    app.get('/cartItem/:name',verifyToken, async (req,res)=>{
+      const name = req.params.name;
+      const query = {name: name};
+      const result = await cartCollection.findOne(query)
+      res.send(result)
+    })
     // delete user all cart data by email
-    app.delete('/deleteAllCart/:email', async(req,res)=>{
+    app.delete('/deleteAllCart/:email',verifyToken, async(req,res)=>{
       const email = req.params.email;
       const query = {user_email: email};
       const result = await cartCollection.deleteMany(query)
       res.send(result)
     })
     // delete single item from cart by id
-    app.delete('/deleteOneCart/:id', async(req,res)=>{
+    app.delete('/deleteOneCart/:id',verifyToken, async(req,res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await cartCollection.deleteOne(query)
