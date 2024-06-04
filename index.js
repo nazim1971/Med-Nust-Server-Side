@@ -76,6 +76,19 @@ async function run() {
           next();
         }
 
+            // use verify seller after verifyToken
+    const verifySeller = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const isAdmin = user?.role === 'seller';
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
+
+
     // get all medicine data 
     app.get('/medicines',async(req,res)=>{
       const result = await categoryCollection.find().toArray()
@@ -106,8 +119,13 @@ async function run() {
       const result = await cartCollection.insertOne(medicineData);
       res.send(result)
     })
+    //get all cart item
+    app.get('/cart',verifyToken,verifyAdmin, async(req,res)=>{
+      const result = await cartCollection.find().toArray();
+      res.send(result)
+    })
     // get card data add by user filter by user email
-    app.get('/userCart/:email', async (req,res)=>{
+    app.get('/userCart/:email',verifyToken, async (req,res)=>{
       const email = req.params.email;
       const query = {user_email: email};
       const result = await cartCollection.find(query).toArray();
@@ -181,23 +199,19 @@ async function run() {
       const result = await usersCollection.findOne({ email })
       res.send(result)
     })
-      // // CHECK THE USER IS A ADMIN OR NOT
-      // app.get('/users/admin/:email', verifyToken, async (req, res) => {
-      //   const email = req.params.email;
-  
-      //   if (email !== req.decoded.email) {
-      //     return res.status(403).send({ message: 'forbidden access' })
-      //   }
-  
-      //   const query = { email: email };
-      //   const user = await usersCollection.findOne(query);
-      //   let admin = false;
-      //   if (user) {
-      //     admin = user?.role === 'admin';
-      //   }
-      //   res.send({ admin });
-      // })
-      
+    
+    //update user role 
+    app.patch('/users/admin/:id', async(req,res)=>{
+      const id = req.params.id;
+      const newRole = req.body.role
+      const query = {_id: new ObjectId(id)}
+      const updatedDoc = {
+        $set: {role: newRole,timestamp: Date.now()},
+      }
+      const result = await usersCollection.updateOne(query,updatedDoc);
+      res.send(result)
+    })
+    
       // payments releted api
       // payment intent
     app.post('/create-payment-intent', async (req, res) => {
@@ -216,7 +230,7 @@ async function run() {
       })
     });
 
-
+    // get payment history by email
     app.get('/payments/:email',verifyToken, async (req, res) => {
       const query = { email: req.params.email }
       if (req.params.email !== req.decoded.email) {
@@ -225,6 +239,12 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
+
+    // get all payment history
+    app.get('/payments',verifyToken,verifyAdmin, async (req,res)=>{
+      const result = await paymentCollection.find().toArray();
+      res.send(result)
+    }) 
 
     app.post('/payments', async (req, res) => {
       const payment = req.body;
