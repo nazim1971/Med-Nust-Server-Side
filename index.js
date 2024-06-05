@@ -109,6 +109,13 @@ async function run() {
         const result = await categoryCollection.find({category}).toArray();
         res.send(result)
     })
+    // get only seller added medicine 
+    app.get('/sellerMed/:email',verifyToken,verifySeller, async(req,res)=>{
+      const email = req.params.email;
+      const query = {sellerEmail: email};
+      const result = await categoryCollection.find(query).toArray();
+      res.send(result);
+    })
 
 
 
@@ -124,7 +131,7 @@ async function run() {
     const result = await categoryNameCollection.insertOne(category);
     res.send(result)
   })
-  // update a category 
+  // update a category name
   app.patch('/category/:id', async (req, res) => {
     const item = req.body;
     const id = req.params.id;
@@ -218,9 +225,22 @@ async function run() {
 
       // bannaer related api
 
+      //get all banner
     app.get('/banner', async(req,res)=>{
       const result = await bannerCollection.find().toArray();
       res.send(result);
+    })  
+    //get all banner by active status
+    app.get('/activeBanner', async(req,res)=>{
+      const result = await bannerCollection.find({status: 'active'}).toArray();
+        // Project specific fields (status and image)
+      const projectedBanners = result.map((banner) => ({
+    status: banner.status,
+    image: banner.image,
+    id: banner._id
+  }));
+
+  res.send(projectedBanners);
     })  
     //update banner show
     app.patch('/banner/:id', async(req,res)=>{
@@ -231,6 +251,12 @@ async function run() {
         $set:{...status}
       };
       const result = await bannerCollection.updateOne(query, updatedDoc)
+      res.send(result)
+    })
+    // add item to banner
+    app.post('/addBanner', async(req,res)=>{
+      const banner = req.body;
+      const result = await bannerCollection.insertOne(banner);
       res.send(result)
     })
 
