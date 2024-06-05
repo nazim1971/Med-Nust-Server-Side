@@ -116,6 +116,31 @@ async function run() {
       const result = await categoryCollection.find(query).toArray();
       res.send(result);
     })
+    //get medicine by id
+    // app.get('/updateMed/:id',verifyToken,verifySeller, async(req,res)=>{
+    //   const id = req.params.id;
+    //   const query = {_id: new ObjectId(id)};
+    //   const result = await categoryCollection.findOne(query)
+    //   res.send(result);
+    // })
+    // add medicine to db
+    app.post('/addMed', async(req,res)=>{
+      const query = req.body
+      const result = await categoryCollection.insertOne(query)
+      res.send(result)
+    })
+    //update medicine info
+    // app.patch('/selectedMed/:id', async (req, res) => {
+    //   const item = req.body;
+    //   const id = req.params.id;
+    //   const filter = { _id: new ObjectId(id) }
+    //   const updatedDoc = {
+    //     $set: {...item}
+    //   }
+    //   const result = await categoryCollection.updateOne(filter, updatedDoc)
+    //   res.send(result);
+    // })
+
 
 
 
