@@ -41,6 +41,7 @@ async function run() {
     const usersCollection = client.db("medDB").collection('users');
     const cartCollection = client.db("medDB").collection('cart');
     const paymentCollection = client.db("medDB").collection("payments");
+    const bannerCollection = client.db('medDB').collection('banner')
 
     // jwt relrated api
     app.post('/jwt',async(req,res)=>{
@@ -89,7 +90,8 @@ async function run() {
     }
 
 
-    // get all medicine data 
+        // get all medicine data //
+
     app.get('/medicines',async(req,res)=>{
       const result = await categoryCollection.find().toArray()
       res.send(result)
@@ -108,7 +110,10 @@ async function run() {
         res.send(result)
     })
 
-    // all category
+
+
+       // all category//
+
     app.get('/categoryName', async(req,res)=>{
         const result = await categoryNameCollection.find().toArray();
         res.send(result)
@@ -137,7 +142,10 @@ async function run() {
     const result = await categoryNameCollection.deleteOne(query);
     res.send(result);
   })
-    // add medicine to the cart
+
+
+       // add medicine to the cart//
+
     app.post('/cart', async(req,res)=>{
       const medicineData = req.body;
       const result = await cartCollection.insertOne(medicineData);
@@ -155,6 +163,7 @@ async function run() {
       const result = await cartCollection.find(query).toArray();
       res.send(result)
     })
+
     app.get('/cartItem/:name',verifyToken, async (req,res)=>{
       const name = req.params.name;
       const query = {name: name};
@@ -206,7 +215,27 @@ async function run() {
       res.status(500).send(error);
     }
   });
-      // users releted api
+
+      // bannaer related api
+
+    app.get('/banner', async(req,res)=>{
+      const result = await bannerCollection.find().toArray();
+      res.send(result);
+    })  
+    //update banner show
+    app.patch('/banner/:id', async(req,res)=>{
+      const status = req.body;
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      updatedDoc = {
+        $set:{...status}
+      };
+      const result = await bannerCollection.updateOne(query, updatedDoc)
+      res.send(result)
+    })
+
+         // users releted api//
+
       app.post('/users',async(req,res)=>{
         const user = req.body;
         const query = {email: user.email};
@@ -217,7 +246,7 @@ async function run() {
         const result = await  usersCollection.insertOne(user);
         res.send(result);
       })
-
+      //get all users
       app.get('/users',verifyToken,verifyAdmin, async (req, res) => {
         const result = await usersCollection.find().toArray();
         res.send(result);
@@ -241,8 +270,10 @@ async function run() {
       const result = await usersCollection.updateOne(query,updatedDoc);
       res.send(result)
     })
+
     
       // payments releted api
+
       // payment intent
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
@@ -270,12 +301,30 @@ async function run() {
       res.send(result);
     })
 
-    // get all payment history
+    // get all payment filter by status
     app.get('/payments',verifyToken,verifyAdmin, async (req,res)=>{
+      const status = req.query.status
+      const query = {status:status}
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result)
+    }) 
+    //get all payment
+    app.get('/allPayments',verifyToken, async (req,res)=>{
       const result = await paymentCollection.find().toArray();
       res.send(result)
     }) 
-
+    // update payment status
+    app.patch('/updatePayStatus/:id',async (req,res)=>{
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {...item}
+      }
+      const result = await paymentCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+    //add payment details to db
     app.post('/payments', async (req, res) => {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
