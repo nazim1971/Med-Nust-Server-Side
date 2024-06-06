@@ -36,7 +36,7 @@ async function run() {
   try {
 
     // collections
-    const categoryCollection = client.db("medDB").collection('category');
+    const categoryCollection = client.db("medDB").collection('medicine');
     const categoryNameCollection = client.db("medDB").collection('categoryName');
     const usersCollection = client.db("medDB").collection('users');
     const cartCollection = client.db("medDB").collection('cart');
@@ -267,6 +267,7 @@ async function run() {
 
   res.send(projectedBanners);
     })  
+
     //update banner show
     app.patch('/banner/:id', async(req,res)=>{
       const status = req.body;
@@ -279,7 +280,7 @@ async function run() {
       res.send(result)
     })
     // add item to banner
-    app.post('/addBanner', async(req,res)=>{
+    app.post('/addBanner',verifyToken,verifySeller, async(req,res)=>{
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
       res.send(result)
@@ -353,12 +354,13 @@ async function run() {
     })
 
     // get all payment filter by status
-    app.get('/payments',verifyToken,verifyAdmin, async (req,res)=>{
+    app.get('/payments', async (req,res)=>{
       const status = req.query.status
       const query = {status:status}
       const result = await paymentCollection.find(query).toArray();
       res.send(result)
     }) 
+ 
     //get all payment
     app.get('/allPayments',verifyToken, async (req,res)=>{
       const result = await paymentCollection.find().toArray();
