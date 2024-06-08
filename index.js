@@ -96,15 +96,41 @@ async function run() {
     //   const result = await categoryCollection.find().toArray()
     //   res.send(result)
     // })
-    const ITEMS_PER_PAGE = 8;
+  
 
     app.get('/medicines', async (req, res) => {
       const page = parseInt(req.query.page) || 1; // default to page 1 if not provided
-      const skip = (page - 1) * ITEMS_PER_PAGE;
-      const result = await categoryCollection.find().skip(skip).limit(ITEMS_PER_PAGE).toArray();
+      const searchQuery = req.query.search || ""; // get search query or default to an empty string
+      const sortOrder = req.query.sortOrder === "desc" ? -1 : 1; // sort by ascending by default, descending if specified
+      const skip = (page - 1) * 8;
+    
+      // Create the filter object for the search query
+      const searchFilter = searchQuery
+        ? {
+            $or: [
+              { name: { $regex: searchQuery, $options: "i" } },
+              { generic_name: { $regex: searchQuery, $options: "i" } },
+              { company_name: { $regex: searchQuery, $options: "i" } }
+            ]
+          }
+        : {};
+    
+      try {
+        // Fetch the filtered and paginated medicines with sorting
+        const result = await categoryCollection
+          .find(searchFilter)
+          .sort(sortOrder === "" ? {} : { per_unit_price: sortOrder }) // apply sorting by price
+          .skip(skip)
+          .limit(8)
+          .toArray();
+          
         res.send(result);
-       
+      } catch (error) {
+        console.error('Error fetching medicines:', error);
+        res.status(500).send('Internal Server Error');
+      }
     });
+    
     // get a singel medicine data by id
     app.get('/medicine/:id', async(req,res)=>{
       const id = req.params.id;
@@ -113,11 +139,42 @@ async function run() {
       res.send(result);
     })
     // all medicine filter by category name
-    app.get('/category', async(req,res)=>{
-        const category = req.query.category;
-        const result = await categoryCollection.find({category}).toArray();
-        res.send(result)
-    })
+    app.get('/category', async (req, res) => {
+      const page = parseInt(req.query.page) || 1; // default to page 1 if not provided
+      const searchQuery = req.query.search || ""; // get search query or default to an empty string
+      const sortOrder = req.query.sortOrder === "desc" ? -1 : 1; // sort by ascending by default, descending if specified
+      const skip = (page - 1) * 8;
+  
+      // Extract category name from the query parameters
+      const category = req.query.category;
+  
+      // Create the filter object for the search query
+      const searchFilter = searchQuery
+          ? {
+              $or: [
+                  { name: { $regex: searchQuery, $options: "i" } },
+                  { generic_name: { $regex: searchQuery, $options: "i" } },
+                  { company_name: { $regex: searchQuery, $options: "i" } }
+              ]
+          }
+          : {};
+  
+      try {
+          // Fetch the filtered and paginated medicines with sorting
+          const result = await categoryCollection
+              .find({ ...searchFilter, category })
+              .sort(sortOrder === "" ? {} : { per_unit_price: sortOrder }) // apply sorting by price
+              .skip(skip)
+              .limit(8) // Assuming 8 items per page
+              .toArray();
+  
+          res.send(result);
+      } catch (error) {
+          console.error('Error fetching medicines by category:', error);
+          res.status(500).send('Internal Server Error');
+      }
+  });
+  
     // get only seller added medicine 
     app.get('/sellerMed/:email',verifyToken,verifySeller, async(req,res)=>{
       const email = req.params.email;
