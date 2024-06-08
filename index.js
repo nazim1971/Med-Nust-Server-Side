@@ -92,10 +92,19 @@ async function run() {
 
         // get all medicine data //
 
-    app.get('/medicines',async(req,res)=>{
-      const result = await categoryCollection.find().toArray()
-      res.send(result)
-    })
+    // app.get('/medicines',async(req,res)=>{
+    //   const result = await categoryCollection.find().toArray()
+    //   res.send(result)
+    // })
+    const ITEMS_PER_PAGE = 8;
+
+    app.get('/medicines', async (req, res) => {
+      const page = parseInt(req.query.page) || 1; // default to page 1 if not provided
+      const skip = (page - 1) * ITEMS_PER_PAGE;
+      const result = await categoryCollection.find().skip(skip).limit(ITEMS_PER_PAGE).toArray();
+        res.send(result);
+       
+    });
     // get a singel medicine data by id
     app.get('/medicine/:id', async(req,res)=>{
       const id = req.params.id;
@@ -268,6 +277,14 @@ async function run() {
   res.send(projectedBanners);
     })  
 
+    //get all banner by sellerEmail
+    app.get('/banners/:email',verifyToken,verifySeller, async(req,res)=>{
+      const email = req.params.email;
+      const query = {sellerEmail: email};
+      const result = await bannerCollection.find(query).toArray();
+      res.send(result);
+    })  
+
     //update banner show
     app.patch('/banner/:id', async(req,res)=>{
       const status = req.body;
@@ -362,10 +379,36 @@ async function run() {
     }) 
  
     //get all payment
-    app.get('/allPayments',verifyToken, async (req,res)=>{
+    app.get('/allPayments', async (req,res)=>{
       const result = await paymentCollection.find().toArray();
       res.send(result)
     }) 
+    // app.get('/allPayments', async (req, res) => {
+      
+    //     // Retrieve startDate and endDate from request query parameters
+    //     const { startDate, endDate } = req.query;
+    
+    //     // If startDate and endDate are provided, filter payments based on the date range
+    //     let payments;
+    //     if (startDate && endDate) {
+    //       // Convert startDate and endDate strings to Date objects
+    //       const start = new Date(startDate);
+    //       const end = new Date(endDate);
+    
+    //       // Fetch payments from your database and filter based on date range
+    //       payments = await paymentCollection.find({
+    //         date: { $gte: start, $lte: end }
+    //       });
+    //     } else {
+    //       // If startDate and endDate are not provided, return all payments
+    //       payments = await paymentCollection.find();
+    //     }
+    
+    //     // Send payments as response
+    //     res.json(payments);
+    //   } 
+    //);
+    
     // update payment status
     app.patch('/updatePayStatus/:id',async (req,res)=>{
       const item = req.body;
