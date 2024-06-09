@@ -92,10 +92,10 @@ async function run() {
 
         // get all medicine data //
 
-    // app.get('/medicines',async(req,res)=>{
-    //   const result = await categoryCollection.find().toArray()
-    //   res.send(result)
-    // })
+        app.get('/disMedicines', async (req, res) => {
+            const result = await categoryCollection.find().toArray();
+            res.send(result);
+          })
   
 
     app.get('/medicines', async (req, res) => {
@@ -114,21 +114,15 @@ async function run() {
             ]
           }
         : {};
-    
-      try {
         // Fetch the filtered and paginated medicines with sorting
         const result = await categoryCollection
           .find(searchFilter)
-          .sort(sortOrder === "" ? {} : { per_unit_price: sortOrder }) // apply sorting by price
+          .sort({ per_unit_price: sortOrder }) // apply sorting by price
           .skip(skip)
           .limit(8)
           .toArray();
           
         res.send(result);
-      } catch (error) {
-        console.error('Error fetching medicines:', error);
-        res.status(500).send('Internal Server Error');
-      }
     });
     
     // get a singel medicine data by id
@@ -159,20 +153,16 @@ async function run() {
           }
           : {};
   
-      try {
+      
           // Fetch the filtered and paginated medicines with sorting
           const result = await categoryCollection
               .find({ ...searchFilter, category })
-              .sort(sortOrder === "" ? {} : { per_unit_price: sortOrder }) // apply sorting by price
+              .sort({ per_unit_price: sortOrder }) // apply sorting by price
               .skip(skip)
               .limit(8) // Assuming 8 items per page
               .toArray();
   
           res.send(result);
-      } catch (error) {
-          console.error('Error fetching medicines by category:', error);
-          res.status(500).send('Internal Server Error');
-      }
   });
   
     // get only seller added medicine 
@@ -284,20 +274,17 @@ async function run() {
     })
     // increase count by +1
     app.put('/cart/increment/:id', async (req, res) => {
-      try {
+     
         const result = await cartCollection.findOneAndUpdate(
           { _id: new ObjectId(req.params.id) },
           { $inc: { count: 1 } },
           { returnOriginal: false }
         );
         res.json(result.value);
-      } catch (error) {
-        res.status(500).send(error);
-      }
     });
      // Decrement item count
   app.put('/cart/decrement/:id', async (req, res) => {
-    try {
+    
       const item = await cartCollection.findOne({ _id: new ObjectId(req.params.id) });
       if (item.count > 1) {
         const result = await cartCollection.findOneAndUpdate(
@@ -309,9 +296,6 @@ async function run() {
       } else {
         res.status(400).json({ message: 'Count cannot be less than 1' });
       }
-    } catch (error) {
-      res.status(500).send(error);
-    }
   });
 
       // bannaer related api
@@ -328,7 +312,9 @@ async function run() {
       const projectedBanners = result.map((banner) => ({
     status: banner.status,
     image: banner.image,
-    id: banner._id
+    id: banner._id,
+    name: banner.name,
+    description: banner.description
   }));
 
   res.send(projectedBanners);
@@ -359,6 +345,7 @@ async function run() {
       const result = await bannerCollection.insertOne(banner);
       res.send(result)
     })
+
 
          // users releted api//
 
@@ -404,7 +391,6 @@ async function run() {
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
-      console.log(amount, 'amount inside the intent')
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -440,31 +426,7 @@ async function run() {
       const result = await paymentCollection.find().toArray();
       res.send(result)
     }) 
-    // app.get('/allPayments', async (req, res) => {
-      
-    //     // Retrieve startDate and endDate from request query parameters
-    //     const { startDate, endDate } = req.query;
-    
-    //     // If startDate and endDate are provided, filter payments based on the date range
-    //     let payments;
-    //     if (startDate && endDate) {
-    //       // Convert startDate and endDate strings to Date objects
-    //       const start = new Date(startDate);
-    //       const end = new Date(endDate);
-    
-    //       // Fetch payments from your database and filter based on date range
-    //       payments = await paymentCollection.find({
-    //         date: { $gte: start, $lte: end }
-    //       });
-    //     } else {
-    //       // If startDate and endDate are not provided, return all payments
-    //       payments = await paymentCollection.find();
-    //     }
-    
-    //     // Send payments as response
-    //     res.json(payments);
-    //   } 
-    //);
+
     
     // update payment status
     app.patch('/updatePayStatus/:id',async (req,res)=>{
@@ -482,8 +444,7 @@ async function run() {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
 
-      //  carefully delete each item from the cart
-      console.log('payment info', payment);
+    
       // get the id of cart items
       const cartIds = payment.cartInfo.map(item => item.itemId);
 
