@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 
 // middleware
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174','https://med-nust.web.app','https://med-nust.firebaseapp.com'],
   credentials: true,
   optionSuccessStatus: 200,
 }
@@ -172,20 +172,22 @@ async function run() {
       const result = await categoryCollection.find(query).toArray();
       res.send(result);
     })
-    //get medicine by id
-    // app.get('/updateMed/:id',verifyToken,verifySeller, async(req,res)=>{
-    //   const id = req.params.id;
-    //   const query = {_id: new ObjectId(id)};
-    //   const result = await categoryCollection.findOne(query)
-    //   res.send(result);
-    // })
+
+    // delete single medicine by id
+    app.delete('/sellerMedicine/:id',verifyToken,verifySeller, async (req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await categoryCollection.deleteOne(query);
+      res.send(result)
+    } )
+
     // add medicine to db
-    app.post('/addMed', async(req,res)=>{
+    app.post('/addMed',verifyToken,verifySeller, async(req,res)=>{
       const query = req.body
       const result = await categoryCollection.insertOne(query)
       res.send(result)
     })
-    //update medicine info
+    // update medicine info
     // app.patch('/selectedMed/:id', async (req, res) => {
     //   const item = req.body;
     //   const id = req.params.id;
@@ -207,13 +209,13 @@ async function run() {
         res.send(result)
     })
     // add a new category
-  app.post('/addCategory', async(req,res)=>{
+  app.post('/addCategory',verifyToken,verifyAdmin, async(req,res)=>{
     const category = req.body;
     const result = await categoryNameCollection.insertOne(category);
     res.send(result)
   })
   // update a category name
-  app.patch('/category/:id', async (req, res) => {
+  app.patch('/category/:id',verifyToken,verifyAdmin, async (req, res) => {
     const item = req.body;
     const id = req.params.id;
     const filter = { _id: new ObjectId(id) }
@@ -224,7 +226,7 @@ async function run() {
     res.send(result);
   })
   // delete a category by id
-  app.delete('/category/:id',async(req,res)=>{
+  app.delete('/category/:id',verifyToken,verifyAdmin, async(req,res)=>{
     const id= req.params.id;
     const query = {_id: new ObjectId(id)};
     const result = await categoryNameCollection.deleteOne(query);
@@ -240,7 +242,7 @@ async function run() {
       res.send(result)
     })
     //get all cart item
-    app.get('/cart',verifyToken,verifyAdmin, async(req,res)=>{
+    app.get('/cart',verifyToken, async(req,res)=>{
       const result = await cartCollection.find().toArray();
       res.send(result)
     })
@@ -273,7 +275,7 @@ async function run() {
       res.send(result)
     })
     // increase count by +1
-    app.put('/cart/increment/:id', async (req, res) => {
+    app.put('/cart/increment/:id',verifyToken, async (req, res) => {
      
         const result = await cartCollection.findOneAndUpdate(
           { _id: new ObjectId(req.params.id) },
@@ -283,7 +285,7 @@ async function run() {
         res.json(result.value);
     });
      // Decrement item count
-  app.put('/cart/decrement/:id', async (req, res) => {
+  app.put('/cart/decrement/:id',verifyToken, async (req, res) => {
     
       const item = await cartCollection.findOne({ _id: new ObjectId(req.params.id) });
       if (item.count > 1) {
@@ -329,7 +331,7 @@ async function run() {
     })  
 
     //update banner show
-    app.patch('/banner/:id', async(req,res)=>{
+    app.patch('/banner/:id',verifyToken,verifyAdmin, async(req,res)=>{
       const status = req.body;
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
@@ -373,7 +375,7 @@ async function run() {
     })
     
     //update user role 
-    app.patch('/users/admin/:id', async(req,res)=>{
+    app.patch('/users/admin/:id',verifyToken,verifyAdmin, async(req,res)=>{
       const id = req.params.id;
       const newRole = req.body.role
       const query = {_id: new ObjectId(id)}
@@ -414,7 +416,7 @@ async function run() {
     })
 
     // get all payment filter by status
-    app.get('/payments', async (req,res)=>{
+    app.get('/payments',verifyToken, async (req,res)=>{
       const status = req.query.status
       const query = {status:status}
       const result = await paymentCollection.find(query).toArray();
@@ -422,14 +424,14 @@ async function run() {
     }) 
  
     //get all payment
-    app.get('/allPayments', async (req,res)=>{
+    app.get('/allPayments',verifyToken,verifyAdmin, async (req,res)=>{
       const result = await paymentCollection.find().toArray();
       res.send(result)
     }) 
 
     
     // update payment status
-    app.patch('/updatePayStatus/:id',async (req,res)=>{
+    app.patch('/updatePayStatus/:id',verifyToken,verifyAdmin, async (req,res)=>{
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
@@ -440,7 +442,7 @@ async function run() {
       res.send(result);
     })
     //add payment details to db
-    app.post('/payments', async (req, res) => {
+    app.post('/payments',verifyToken, async (req, res) => {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
 
